@@ -7,7 +7,7 @@ int strcmp_m(const char *arg, const char *ava_arg)
     int id = 0;
     while (*(arg + id) != '\0')
     {
-        if (*(arg + id) != *(ava_arg + id))
+        if (tolower(*(arg + id)) != tolower(*(ava_arg + id)))
         {
             //printf("id - %d\n", id);
             return -1;
@@ -41,10 +41,10 @@ parsed_args parse_arguments(int argc, char *argv[])
 
     arg_init();
 
-    pargs.mem_type = "RAM";
-    pargs.block_size_measure = NULL;
-    pargs.block_size = 1024;
-    pargs.count = 10;
+    pargs.mem_type = DEFAULT_MEM_TEST;
+    pargs.block_size_measure = BYTES;
+    pargs.block_size = DEFAULT_BLOCK_SIZE;
+    pargs.count = 0;
 
     int parsed_number = 0;
     int status = 0;
@@ -64,19 +64,19 @@ parsed_args parse_arguments(int argc, char *argv[])
                 case 0:
                     if (strcmp_m(argv[i] + status, "RAM") != -1)
                     {
-                        pargs.mem_type = "RAM";
+                        pargs.mem_type = RAM;
                     }
                     else if (strcmp_m(argv[i] + status, "HDD") != -1)
                     {
-                        pargs.mem_type = "HDD";
+                        pargs.mem_type = SSDnHDD;
                     }
                     if (strcmp_m(argv[i] + status, "SSD") != -1)
                     {
-                        pargs.mem_type = "SSD";
+                        pargs.mem_type = SSDnHDD;
                     }
-                    if (strcmp_m(argv[i] + status, "flash") != -1)
+                    if (strcmp_m(argv[i] + status, "FLASH") != -1)
                     {
-                        pargs.mem_type = "flash";
+                        pargs.mem_type = FLASH;
                     }
 
                     break;
@@ -85,11 +85,11 @@ parsed_args parse_arguments(int argc, char *argv[])
                     pargs.block_size = parsed_number;
                     if (strcmp_m(argv[i] + status + len_num((float)parsed_number), "Kb") > 0)
                     {
-                        pargs.block_size_measure = "Kb";
+                        pargs.block_size_measure = KB;
                     }
                     else if (strcmp_m(argv[i] + status + len_num((float)parsed_number), "Mb") > 0)
                     {
-                        pargs.block_size_measure = "Mb";
+                        pargs.block_size_measure = MB;
                     }
                     break;
                 case 2:
