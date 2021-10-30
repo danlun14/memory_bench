@@ -60,6 +60,7 @@ void print_out_res_file(out_res node)
 {
     FILE *out_file = fopen("result.csv", "a");
     fprintf(out_file, "[MemoryType: %s; ", node.MemoryType);
+
     fprintf(out_file, "BlockSize: %ld; ", node.BlockSize);
     fprintf(out_file, "ElmentType: %s; ", node.ElementType);
     fprintf(out_file, "BufferSize: %d; ", node.BufferSize);
@@ -153,8 +154,9 @@ void default_memory_test()
     long bytes = 0;
     bytes = pargs.block_size * pow(1024, pargs.block_size_measure);
     char *pathname = "test_default_memory123adad13HTHTEFG.txt";
-    //read(STDIN_FILENO, pathname, 128);
+    pargs.mem_type = SSDnHDD;
     //ссд
+
     FILE *result_blocks_wr = fopen("plot_blocksr.txt", "w");
     FILE *result_blocks_rd = fopen("plot_blocksw.txt", "w");
     for (pargs.block_size; pargs.block_size <= 80; pargs.block_size += 4)
@@ -170,7 +172,7 @@ void default_memory_test()
 
         for (int i = 0; i < pargs.count; i++)
         {
-            smem_res[i].MemoryType = smem_res[0].MemoryType;
+            smem_res[i].MemoryType = "HDD|SSD";
             smem_res[i].BlockSize = bytes;
             smem_res[i].ElementType = "CHAR";
             smem_res[i].BufferSize = 0;
@@ -188,10 +190,8 @@ void default_memory_test()
             int test = fwrite(char_array, sizeof(char), bytes, opfile);
             if (test != bytes)
             {
-
-                getchar();
                 printf("Cannot write %ld.\n", bytes);
-                //exit(1);
+                exit(1);
             }
             else
             {
@@ -217,7 +217,7 @@ void default_memory_test()
             if (test != bytes)
             {
                 printf("Cannot read.\n");
-                //exit(1);
+                exit(1);
             }
             else
             {
@@ -253,62 +253,168 @@ void default_memory_test()
     }
     fclose(result_blocks_wr);
     fclose(result_blocks_rd);
-    /*
-    bytes = L1;
-    out_res rammem_res[pargs.count];
-    double t_run = 0;
-    double t_avr_wr = 0;
-    double t_avr_rd = 0;
-    for (int i = 0; i < pargs.count; i++)
+
+    FILE *result_buf_wr = fopen("plot_bufr.txt", "w");
+    FILE *result_buf_rd = fopen("plot_bufw.txt", "w");
+
+    //buf
+
+    pargs.block_size = 32;
+    pargs.block_size_measure = MB;
+    bytes = pargs.block_size * pow(1024, pargs.block_size_measure);
+
+    for (int bufsize = 0; bufsize <= BUFSIZ * 8; bufsize += (BUFSIZ / 2))
     {
-        rammem_res[i].MemoryType = "RAM";
-        rammem_res[i].BlockSize = bytes;
-        rammem_res[i].ElementType = "LONG";
-        rammem_res[i].BufferSize = 0;
-        rammem_res[i].LaunchNum = i + 1;
-        rammem_res[i].Timer = "hpctimer_getwtime()";
+        out_res smem_res[pargs.count];
+        char *char_array = memory_init(bytes);
+        //out_res smem_res[pargs.count];
+        double t_run = 0;
+        double t_avr_wr = 0;
+        double t_avr_rd = 0;
 
-        long *vector = xmalloc(bytes);
-        t_run = 0 - hpctimer_getwtime();
-        fflush(stdout);
-        ram_write(vector, bytes / sizeof(long));
-        t_run += hpctimer_getwtime();
-        t_avr_wr += t_run;
-        free(vector);
-        fflush(stdout);
-        printf("write - %lf\n", t_run);
-        fflush(stdout);
+        for (int i = 0; i < pargs.count; i++)
+        {
 
-        rammem_res[i].WriteTime = t_run;
+            smem_res[i].MemoryType = "HDD|SSD";
+            smem_res[i].MemoryType = smem_res[0].MemoryType;
+            smem_res[i].BlockSize = bytes;
+            smem_res[i].ElementType = "CHAR";
+            smem_res[i].BufferSize = i;
+            smem_res[i].LaunchNum = i + 1;
+            smem_res[i].Timer = "hpctimer_getwtime()";
+            FILE *opfile;
+            if ((opfile = fopen(pathname, "w")) == NULL)
+            {
+                printf("Cannot open file.\n");
+                exit(1);
+            }
+            setvbuf(opfile, char_array, _IOFBF, i);
+            t_run = 0 - hpctimer_getwtime();
+            int test = fwrite(char_array, sizeof(char), bytes, opfile);
+            if (test != bytes)
+            {
+                printf("Cannot write %ld.\n", bytes);
+                exit(1);
+            }
+            else
+            {
+                //  printf("write.\n");
+            }
+            t_run += hpctimer_getwtime();
+            t_avr_wr += t_run;
+            smem_res[i].WriteTime = t_run;
+            //printf("write - %lf\n", t_run);
+            //fflush(stdout);
+            fclose(opfile);
 
-        vector = xmalloc(bytes);
-        t_run = 0 - hpctimer_getwtime();
-        ram_read(vector, bytes / sizeof(long));
-        t_run += hpctimer_getwtime();
-        t_avr_rd += t_run;
-        free(vector);
-        printf("read - %lf\n", t_run);
-        fflush(stdout);
+            if ((opfile = fopen(pathname, "r")) == NULL)
+            {
+                printf("Cannot open file.\n");
+                exit(1);
+            }
+            char *_char_array = xmalloc(bytes);
+            setvbuf(opfile, char_array, _IOFBF, i);
+            t_run = 0 - hpctimer_getwtime();
+            test = fread(_char_array, sizeof(char), bytes, opfile);
+            if (test != bytes)
+            {
+                printf("Cannot read.\n");
+                exit(1);
+            }
+            else
+            {
+                //printf("read\n");
+            }
+            t_run += hpctimer_getwtime();
+            t_avr_rd += t_run;
+            smem_res[i].ReadTime = t_run;
+            //printf("read - %lf\n", t_run);
+            fflush(stdout);
+            free(_char_array);
+            fclose(opfile);
 
-        rammem_res[i].ReadTime = t_run;
+            unlink(pathname);
+        }
+        for (int i = 0; i < pargs.count; i++)
+        {
+            smem_res[i].AverageWriteTime = t_avr_wr / pargs.count;
+            smem_res[i].WriteBandwidth = bytes / smem_res[0].AverageWriteTime / (1024 * 1024);
+            smem_res[i].AbsErrorWrite = fabs(smem_res[i].AverageWriteTime - smem_res[i].WriteTime);
+            smem_res[i].RelErrorWrite = smem_res[i].AbsErrorWrite / smem_res[i].AverageWriteTime;
+
+            smem_res[i].AverageReadTime = t_avr_rd / pargs.count;
+            smem_res[i].ReadBandwidth = bytes / smem_res[0].AverageReadTime / (1024 * 1024);
+            smem_res[i].AbsErrorRead = fabs(smem_res[i].AverageReadTime - smem_res[i].ReadTime);
+            smem_res[i].RelErrorRead = smem_res[i].AbsErrorRead / smem_res[i].AverageReadTime;
+            //print_out_res(smem_res[i]);
+            print_out_res_file(smem_res[i]);
+        }
+        fprintf(result_buf_wr, "%d %.0lf\n", bufsize, smem_res[0].WriteBandwidth);
+        fprintf(result_buf_rd, "%d %.0lf\n", bufsize, smem_res[0].ReadBandwidth);
     }
+    fclose(result_buf_wr);
+    fclose(result_buf_rd);
 
-    for (int i = 0; i < pargs.count; i++)
+    //ram
+    FILE *result_ram_wr = fopen("plot_ramw.txt", "w");
+    FILE *result_ram_rd = fopen("plot_ramr.txt", "w");
+    int block_size[4];
+    block_size[0] = L1_SIZE;
+    block_size[1] = L2_SIZE;
+    block_size[2] = L3_SIZE;
+    block_size[3] = L3_SIZE * 5;
+    for (int size_id = 0; size_id < 4; size_id++)
     {
-        rammem_res[i].AverageWriteTime = t_avr_wr / pargs.count;
-        rammem_res[i].WriteBandwidth = bytes / rammem_res[0].AverageWriteTime / (1024 * 1024);
-        rammem_res[i].AbsErrorWrite = fabs(rammem_res[i].AverageWriteTime - rammem_res[i].WriteTime);
-        rammem_res[i].RelErrorWrite = rammem_res[i].AbsErrorWrite / rammem_res[i].AverageWriteTime;
+        long bytes = block_size[size_id];
+        out_res rammem_res[pargs.count];
+        double t_run = 0;
+        double t_avr_wr = 0;
+        double t_avr_rd = 0;
+        for (int i = 0; i < pargs.count; i++)
+        {
+            rammem_res[i].MemoryType = "RAM";
+            rammem_res[i].BlockSize = bytes;
+            rammem_res[i].ElementType = "LONG";
+            rammem_res[i].BufferSize = 0;
+            rammem_res[i].LaunchNum = i + 1;
+            rammem_res[i].Timer = "hpctimer_getwtime()";
 
-        rammem_res[i].AverageReadTime = t_avr_rd / pargs.count;
-        rammem_res[i].ReadBandwidth = bytes / rammem_res[0].AverageReadTime / (1024 * 1024);
-        rammem_res[i].AbsErrorRead = fabs(rammem_res[i].AverageReadTime - rammem_res[i].ReadTime);
-        rammem_res[i].RelErrorRead = rammem_res[i].AbsErrorRead / rammem_res[i].AverageReadTime;
-        print_out_res(rammem_res[i]);
-        print_out_res_file(rammem_res[i]);
+            long *vector = xmalloc(bytes);
+
+            t_run = 0 - hpctimer_getwtime();
+            ram_write(vector, bytes / sizeof(long));
+            t_run += hpctimer_getwtime();
+            t_avr_wr += t_run;
+            free(vector);
+
+            rammem_res[i].WriteTime = t_run;
+
+            vector = xmalloc(bytes);
+            t_run = 0 - hpctimer_getwtime();
+            ram_read(vector, bytes / sizeof(long));
+            t_run += hpctimer_getwtime();
+            t_avr_rd += t_run;
+            free(vector);
+            rammem_res[i].ReadTime = t_run;
+        }
+
+        for (int i = 0; i < pargs.count; i++)
+        {
+            rammem_res[i].AverageWriteTime = t_avr_wr / pargs.count;
+            rammem_res[i].WriteBandwidth = bytes / rammem_res[0].AverageWriteTime / (1024 * 1024);
+            rammem_res[i].AbsErrorWrite = fabs(rammem_res[i].AverageWriteTime - rammem_res[i].WriteTime);
+            rammem_res[i].RelErrorWrite = rammem_res[i].AbsErrorWrite / rammem_res[i].AverageWriteTime;
+
+            rammem_res[i].AverageReadTime = t_avr_rd / pargs.count;
+            rammem_res[i].ReadBandwidth = bytes / rammem_res[0].AverageReadTime / (1024 * 1024);
+            rammem_res[i].AbsErrorRead = fabs(rammem_res[i].AverageReadTime - rammem_res[i].ReadTime);
+            rammem_res[i].RelErrorRead = rammem_res[i].AbsErrorRead / rammem_res[i].AverageReadTime;
+            //print_out_res(rammem_res[i]);
+            print_out_res_file(rammem_res[i]);
+        }
+        fprintf(result_ram_wr, "%ld %.0lf\n", bytes / 1024, rammem_res[0].WriteBandwidth);
+        fprintf(result_ram_rd, "%ld %.0lf\n", bytes / 1024, rammem_res[0].ReadBandwidth);
     }
-    
-    */
 }
 
 void ram_memory_test(parsed_args pargs)
