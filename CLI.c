@@ -78,6 +78,10 @@ parsed_args parse_arguments(int argc, char *argv[])
                     {
                         pargs.mem_type = FLASH;
                     }
+                    if (strcmp_m(argv[i] + status, "SWAP") != -1)
+                    {
+                        pargs.mem_type = SWAP;
+                    }
 
                     break;
                 case 1:

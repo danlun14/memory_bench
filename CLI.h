@@ -14,6 +14,7 @@
 #define FLASH 1
 #define SSDnHDD 2
 #define RAM 3
+#define SWAP 4
 
 #define ARG_MAX_LENGHT 32
 

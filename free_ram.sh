@@ -1,0 +1,1 @@
+printf '%s' "$(free | grep "Mem"| awk '{print $4}')"
